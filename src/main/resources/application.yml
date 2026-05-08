@@ -55,7 +55,8 @@ jwt:
 # ── Firebase ─────────────────────────────────────────────────────────────────
 firebase:
   project-id: ${FIREBASE_PROJECT_ID}
-  credentials-path: ${FIREBASE_CREDENTIALS_PATH}
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  credentials-json: ${FIREBASE_CREDENTIALS_JSON:}
 
 # ── Razorpay ─────────────────────────────────────────────────────────────────
 razorpay:

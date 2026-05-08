@@ -8,16 +8,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Initialises the Firebase Admin SDK using the service-account credentials file
- * whose path is supplied via the {@code FIREBASE_CREDENTIALS_PATH} environment variable.
+ * Initialises the Firebase Admin SDK.
  *
- * <p>The credentials file must be a valid Firebase service-account JSON downloaded from
- * the Firebase console. It must never be committed to source control.
+ * Supports two modes:
+ * 1. FIREBASE_CREDENTIALS_JSON env var — JSON content directly (for Railway/cloud)
+ * 2. FIREBASE_CREDENTIALS_PATH env var — path to a local JSON file (for local dev)
  */
 @Slf4j
 @Configuration
@@ -26,16 +28,12 @@ public class FirebaseConfig {
     @Value("${firebase.project-id}")
     private String projectId;
 
-    @Value("${firebase.credentials-path}")
+    @Value("${firebase.credentials-path:}")
     private String credentialsPath;
 
-    /**
-     * Initialises {@link FirebaseApp} once at application startup.
-     * If a default app is already initialised (e.g., in tests), this is a no-op.
-     *
-     * @return the initialised {@link FirebaseApp} instance
-     * @throws IOException if the credentials file cannot be read
-     */
+    @Value("${firebase.credentials-json:}")
+    private String credentialsJson;
+
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
         if (!FirebaseApp.getApps().isEmpty()) {
@@ -45,7 +43,24 @@ public class FirebaseConfig {
 
         log.info("Initialising Firebase Admin SDK for project: {}", projectId);
 
-        try (InputStream serviceAccount = new FileInputStream(credentialsPath)) {
+        InputStream serviceAccount;
+
+        if (credentialsJson != null && !credentialsJson.isBlank()) {
+            // Cloud mode: JSON content from env var
+            log.info("Loading Firebase credentials from FIREBASE_CREDENTIALS_JSON env var");
+            serviceAccount = new ByteArrayInputStream(
+                    credentialsJson.getBytes(StandardCharsets.UTF_8));
+        } else if (credentialsPath != null && !credentialsPath.isBlank()) {
+            // Local mode: file path
+            log.info("Loading Firebase credentials from file: {}", credentialsPath);
+            serviceAccount = new FileInputStream(credentialsPath);
+        } else {
+            throw new IllegalStateException(
+                    "Firebase credentials not configured. Set either " +
+                    "FIREBASE_CREDENTIALS_JSON or FIREBASE_CREDENTIALS_PATH");
+        }
+
+        try (serviceAccount) {
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setProjectId(projectId)
@@ -54,10 +69,6 @@ public class FirebaseConfig {
             FirebaseApp app = FirebaseApp.initializeApp(options);
             log.info("Firebase Admin SDK initialised successfully");
             return app;
-        } catch (IOException e) {
-            log.error("Failed to initialise Firebase Admin SDK — credentials file not found at: {}",
-                    credentialsPath);
-            throw e;
         }
     }
 }
