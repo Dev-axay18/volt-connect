@@ -1,0 +1,23 @@
+# Environment variables — NEVER commit
+.env
+
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Firebase credentials
+firebase-service-account.json
+*.json.key
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

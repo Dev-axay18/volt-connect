@@ -1,0 +1,39 @@
+# ── Development profile overrides ────────────────────────────────────────────
+# Activate with: SPRING_PROFILES_ACTIVE=dev
+# Copy .env.example to .env and fill in real values, then source it before running.
+
+spring:
+  # ── JPA / Hibernate (verbose in dev) ────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: update       # auto-update schema in dev; use 'validate' in prod
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # ── Redis (local dev default) ────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+# ── Server ───────────────────────────────────────────────────────────────────
+server:
+  port: 8080
+
+# ── Logging (verbose in dev) ─────────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    com.voltconnect: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# ── SpringDoc (always enabled in dev) ───────────────────────────────────────
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
